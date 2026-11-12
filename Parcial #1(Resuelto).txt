@@ -1,0 +1,865 @@
+-- =====================================================================
+-- Migración del examen
+-- Estudiante: Débora Cisneros  Tema: B
+-- =====================================================================
+USE rrhh_examen;
+
+-- 1. ALTER TABLE departamento: agregue las dos columnas de su tema (tipo, NOT NULL y DEFAULT)
+ALTER TABLE departamento
+    ADD COLUMN salario_base DECIMAL(10,2) NOT NULL DEFAULT 600.00 CHECK (salario_base > 0),
+    ADD COLUMN dotacion_maxima INT NOT NULL DEFAULT 1 CHECK (dotacion_maxima >= 1);
+
+-- 2. UPDATE: asigne valores a los tres departamentos de ejemplo según los casos de prueba de su tema
+UPDATE departamento 
+SET salario_base = 750.00, dotacion_maxima = 15 
+WHERE id = 1; -- Ventas (para casos de prueba 4 y 5: 12 de 15)
+
+UPDATE departamento 
+SET salario_base = 800.00, dotacion_maxima = 10 
+WHERE id = 2; -- Auditoría Interna
+
+UPDATE departamento 
+SET salario_base = 900.00, dotacion_maxima = 10 
+WHERE id = 3; -- Soporte Técnico (para caso de prueba 6: 6 de 10)
+
+UPDATE departamento 
+SET salario_base = 950.00, dotacion_maxima = 5 
+WHERE id = 4; -- Recursos Humanos (para caso de prueba 1)
+
+
+
+
+
+
+
+2. schema.sql
+(Se corrige la coma faltante en el INSERT INTO departamento original y se incluyen las dos columnas del Tema B)
+
+SQL
+-- =====================================================================
+-- Examen Programación V - Sistema de Gestión de Personal (RRHH)
+-- Base de datos MySQL 8
+-- =====================================================================
+DROP DATABASE IF EXISTS rrhh_examen;
+CREATE DATABASE rrhh_examen CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci;
+USE rrhh_examen;
+
+-- Departamentos de la empresa
+CREATE TABLE departamento (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    codigo          VARCHAR(10)    NOT NULL UNIQUE,
+    nombre          VARCHAR(100)   NOT NULL,
+    salario_base    DECIMAL(10,2) NOT NULL CHECK (salario_base > 0),
+    dotacion_maxima INT            NOT NULL CHECK (dotacion_maxima >= 1)
+);
+
+-- Dotación de personal: cantidad de colaboradores por departamento
+CREATE TABLE dotacion (
+    id               INT AUTO_INCREMENT PRIMARY KEY,
+    departamento_id  INT NOT NULL UNIQUE,
+    cantidad         INT NOT NULL DEFAULT 0,
+    CONSTRAINT fk_dotacion_departamento FOREIGN KEY (departamento_id)
+        REFERENCES departamento (id) ON DELETE CASCADE,
+    CONSTRAINT chk_dotacion_cantidad CHECK (cantidad >= 0)
+);
+
+-- Datos de ejemplo
+INSERT INTO departamento (codigo, nombre, salario_base, dotacion_maxima) VALUES
+    ('DEP-001', 'Ventas', 750.00, 15),
+    ('DEP-002', 'Auditoría Interna', 800.00, 10),
+    ('DEP-003', 'Soporte Técnico', 900.00, 10),
+    ('DEP-004', 'Recursos Humanos', 950.00, 5);
+
+INSERT INTO dotacion (departamento_id, cantidad) VALUES
+    (1, 12),
+    (2, 0),
+    (3, 6),
+    (4, 5);
+
+
+
+
+
+3. modelo/Departamento.java
+Java
+package pa.ac.unachi.rrhh.modelo;
+
+import java.math.BigDecimal;
+
+/**
+ * Departamento de la empresa.
+ */
+public class Departamento {
+
+    private int id;
+    private String codigo;
+    private String nombre;
+    
+    // Tema B: Atributos privados
+    private BigDecimal salarioBase;
+    private int dotacionMaxima;
+
+    public Departamento() {
+    }
+
+    // Parte 2.1: Constructor con parámetros actualizado
+    public Departamento(int id, String codigo, String nombre, BigDecimal salarioBase, int dotacionMaxima) {
+        this.id = id;
+        this.codigo = codigo;
+        this.nombre = nombre;
+        this.salarioBase = salarioBase;
+        this.dotacionMaxima = dotacionMaxima;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public void setCodigo(String codigo) {
+        this.codigo = codigo;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    // Parte 2.1: Getters y Setters
+    public BigDecimal getSalarioBase() {
+        return salarioBase;
+    }
+
+    public void setSalarioBase(BigDecimal salarioBase) {
+        this.salarioBase = salarioBase;
+    }
+
+    public int getDotacionMaxima() {
+        return dotacionMaxima;
+    }
+
+    public void setDotacionMaxima(int dotacionMaxima) {
+        this.dotacionMaxima = dotacionMaxima;
+    }
+}
+
+
+
+
+4. modelo/Dotacion.java
+Java
+package pa.ac.unachi.rrhh.modelo;
+
+/**
+ * Dotación de personal de un departamento (cantidad de colaboradores).
+ * Los campos codigoDepartamento, nombreDepartamento y dotacionMaximaDepartamento 
+ * son de solo lectura: se llenan con el JOIN para mostrarlos en el listado.
+ */
+public class Dotacion {
+
+    private int id;
+    private int departamentoId;
+    private int cantidad;
+
+    // Solo lectura (JOIN con departamento)
+    private String codigoDepartamento;
+    private String nombreDepartamento;
+    
+    // Parte 2.2 (Tema B): Campo transitorio de solo lectura
+    private int dotacionMaximaDepartamento;
+
+    public Dotacion() {
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getDepartamentoId() {
+        return departamentoId;
+    }
+
+    public void setDepartamentoId(int departamentoId) {
+        this.departamentoId = departamentoId;
+    }
+
+    public int getCantidad() {
+        return cantidad;
+    }
+
+    public void setCantidad(int cantidad) {
+        this.cantidad = cantidad;
+    }
+
+    public String getCodigoDepartamento() {
+        return codigoDepartamento;
+    }
+
+    public void setCodigoDepartamento(String codigoDepartamento) {
+        this.codigoDepartamento = codigoDepartamento;
+    }
+
+    public String getNombreDepartamento() {
+        return nombreDepartamento;
+    }
+
+    public void setNombreDepartamento(String nombreDepartamento) {
+        this.nombreDepartamento = nombreDepartamento;
+    }
+
+    // Parte 2.2 (Tema B): Getter y Setter
+    public int getDotacionMaximaDepartamento() {
+        return dotacionMaximaDepartamento;
+    }
+
+    public void setDotacionMaximaDepartamento(int dotacionMaximaDepartamento) {
+        this.dotacionMaximaDepartamento = dotacionMaximaDepartamento;
+    }
+}
+
+
+
+
+
+5. datos/DepartamentoDAO.java
+Java
+package pa.ac.unachi.rrhh.datos;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import pa.ac.unachi.rrhh.modelo.Departamento;
+
+/**
+ * Acceso a datos de la tabla departamento. No valida reglas de negocio.
+ */
+public class DepartamentoDAO {
+
+    /** Inserta el departamento y devuelve el id generado. */
+    public int insertar(Departamento d) throws SQLException {
+        String sql = "INSERT INTO departamento (codigo, nombre, salario_base, dotacion_maxima) VALUES (?, ?, ?, ?)";
+        try (Connection con = Conexion.obtener();
+             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, d.getCodigo());
+            ps.setString(2, d.getNombre());
+            ps.setBigDecimal(3, d.getSalarioBase());
+            ps.setInt(4, d.getDotacionMaxima());
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
+    }
+
+    public List<Departamento> listar() throws SQLException {
+        String sql = "SELECT id, codigo, nombre, salario_base, dotacion_maxima FROM departamento ORDER BY codigo";
+        List<Departamento> lista = new ArrayList<>();
+        try (Connection con = Conexion.obtener();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                lista.add(mapearDepartamento(rs));
+            }
+        }
+        return lista;
+    }
+
+    public Departamento buscarPorId(int id) throws SQLException {
+        String sql = "SELECT id, codigo, nombre, salario_base, dotacion_maxima FROM departamento WHERE id = ?";
+        try (Connection con = Conexion.obtener();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? mapearDepartamento(rs) : null;
+            }
+        }
+    }
+
+    public void actualizar(Departamento d) throws SQLException {
+        String sql = "UPDATE departamento SET codigo = ?, nombre = ?, salario_base = ?, dotacion_maxima = ? WHERE id = ?";
+        try (Connection con = Conexion.obtener();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, d.getCodigo());
+            ps.setString(2, d.getNombre());
+            ps.setBigDecimal(3, d.getSalarioBase());
+            ps.setInt(4, d.getDotacionMaxima());
+            ps.setInt(5, d.getId());
+            ps.executeUpdate();
+        }
+    }
+
+    public void eliminar(int id) throws SQLException {
+        String sql = "DELETE FROM departamento WHERE id = ?";
+        try (Connection con = Conexion.obtener();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        }
+    }
+
+    private Departamento mapearDepartamento(ResultSet rs) throws SQLException {
+        Departamento d = new Departamento();
+        d.setId(rs.getInt("id"));
+        d.setCodigo(rs.getString("codigo"));
+        d.setNombre(rs.getString("nombre"));
+        d.setSalarioBase(rs.getBigDecimal("salario_base"));
+        d.setDotacionMaxima(rs.getInt("dotacion_maxima"));
+        return d;
+    }
+}
+
+
+
+
+
+6. datos/DotacionDAO.java
+Java
+package pa.ac.unachi.rrhh.datos;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import pa.ac.unachi.rrhh.modelo.Dotacion;
+
+/**
+ * Acceso a datos de la tabla dotacion. No valida reglas de negocio.
+ */
+public class DotacionDAO {
+
+    /** Crea el registro de dotación (cantidad 0) de un departamento nuevo. */
+    public void crearRegistro(int departamentoId) throws SQLException {
+        String sql = "INSERT INTO dotacion (departamento_id, cantidad) VALUES (?, 0)";
+        try (Connection con = Conexion.obtener();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, departamentoId);
+            ps.executeUpdate();
+        }
+    }
+
+    public List<Dotacion> listar() throws SQLException {
+        String sql = "SELECT t.id, t.departamento_id, t.cantidad, d.codigo, d.nombre, d.dotacion_maxima "
+                + "FROM dotacion t JOIN departamento d ON d.id = t.departamento_id "
+                + "ORDER BY d.codigo";
+        List<Dotacion> lista = new ArrayList<>();
+        try (Connection con = Conexion.obtener();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                lista.add(mapearDotacion(rs));
+            }
+        }
+        return lista;
+    }
+
+    public Dotacion buscarPorDepartamento(int departamentoId) throws SQLException {
+        String sql = "SELECT t.id, t.departamento_id, t.cantidad, d.codigo, d.nombre, d.dotacion_maxima "
+                + "FROM dotacion t JOIN departamento d ON d.id = t.departamento_id "
+                + "WHERE t.departamento_id = ?";
+        try (Connection con = Conexion.obtener();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, departamentoId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? mapearDotacion(rs) : null;
+            }
+        }
+    }
+
+    public void actualizarCantidad(int departamentoId, int cantidad) throws SQLException {
+        String sql = "UPDATE dotacion SET cantidad = ? WHERE departamento_id = ?";
+        try (Connection con = Conexion.obtener();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, cantidad);
+            ps.setInt(2, departamentoId);
+            ps.executeUpdate();
+        }
+    }
+
+    private Dotacion mapearDotacion(ResultSet rs) throws SQLException {
+        Dotacion t = new Dotacion();
+        t.setId(rs.getInt("id"));
+        t.setDepartamentoId(rs.getInt("departamento_id"));
+        t.setCantidad(rs.getInt("cantidad"));
+        t.setCodigoDepartamento(rs.getString("codigo"));
+        t.setNombreDepartamento(rs.getString("nombre"));
+        t.setDotacionMaximaDepartamento(rs.getInt("dotacion_maxima"));
+        return t;
+    }
+}
+
+
+
+
+7. negocio/DepartamentoService.java
+Java
+package pa.ac.unachi.rrhh.negocio;
+
+import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.List;
+import pa.ac.unachi.rrhh.datos.DepartamentoDAO;
+import pa.ac.unachi.rrhh.datos.DotacionDAO;
+import pa.ac.unachi.rrhh.modelo.Departamento;
+
+/**
+ * Reglas de negocio de los departamentos.
+ */
+public class DepartamentoService {
+
+    private final DepartamentoDAO departamentoDAO = new DepartamentoDAO();
+    private final DotacionDAO dotacionDAO = new DotacionDAO();
+
+    public List<Departamento> listar() throws SQLException {
+        return departamentoDAO.listar();
+    }
+
+    public Departamento buscar(int id) throws NegocioException, SQLException {
+        Departamento d = departamentoDAO.buscarPorId(id);
+        if (d == null) {
+            throw new NegocioException("El departamento solicitado no existe.");
+        }
+        return d;
+    }
+
+    public void crear(Departamento d) throws NegocioException, SQLException {
+        validar(d);
+        try {
+            int id = departamentoDAO.insertar(d);
+            dotacionDAO.crearRegistro(id);
+        } catch (SQLIntegrityConstraintViolationException e) {
+            throw new NegocioException("Ya existe un departamento con el código " + d.getCodigo() + ".");
+        }
+    }
+
+    public void actualizar(Departamento d) throws NegocioException, SQLException {
+        validar(d);
+        try {
+            departamentoDAO.actualizar(d);
+        } catch (SQLIntegrityConstraintViolationException e) {
+            throw new NegocioException("Ya existe un departamento con el código " + d.getCodigo() + ".");
+        }
+    }
+
+    public void eliminar(int id) throws SQLException {
+        departamentoDAO.eliminar(id);
+    }
+
+    private void validar(Departamento d) throws NegocioException {
+        if (d.getCodigo() == null || d.getCodigo().isBlank()) {
+            throw new NegocioException("El código es obligatorio.");
+        }
+        if (!d.getCodigo().matches("DEP-\\d{3}")) {
+            throw new NegocioException("El código debe tener el formato DEP-000.");
+        }
+        if (d.getNombre() == null || d.getNombre().isBlank()) {
+            throw new NegocioException("El nombre es obligatorio.");
+        }
+        if (d.getNombre().length() > 100) {
+            throw new NegocioException("El nombre no puede superar los 100 caracteres.");
+        }
+
+        // Mensajes exactos exigidos por la pauta del examen (Casos de prueba B2 y B3)
+        if (d.getSalarioBase() == null || d.getSalarioBase().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new NegocioException("El salario base debe ser mayor a cero.");
+        }
+        if (d.getDotacionMaxima() < 1) {
+            throw new NegocioException("La dotación máxima debe ser de al menos 1 colaborador.");
+        }
+    }
+}
+
+
+
+8. negocio/DotacionService.java
+Java
+package pa.ac.unachi.rrhh.negocio;
+
+import java.sql.SQLException;
+import java.util.List;
+import pa.ac.unachi.rrhh.datos.DotacionDAO;
+import pa.ac.unachi.rrhh.modelo.Dotacion;
+
+/**
+ * Reglas de negocio de la dotación de personal: altas y bajas.
+ */
+public class DotacionService {
+
+    private final DotacionDAO dotacionDAO = new DotacionDAO();
+
+    public List<Dotacion> listar() throws SQLException {
+        return dotacionDAO.listar();
+    }
+
+    /** Alta: ingresan colaboradores al departamento (contratación o traslado). */
+    public void registrarAlta(int departamentoId, int cantidad) throws NegocioException, SQLException {
+        if (cantidad <= 0) {
+            throw new NegocioException("La cantidad de colaboradores debe ser mayor a cero.");
+        }
+        Dotacion actual = buscar(departamentoId);
+        int nueva = actual.getCantidad() + cantidad;
+
+        // Regla Tema B (Casos de prueba B5 y B6): Validar dotación máxima
+        if (nueva > actual.getDotacionMaximaDepartamento()) {
+            int vacantesDisponibles = actual.getDotacionMaximaDepartamento() - actual.getCantidad();
+            throw new NegocioException("No se puede contratar a " + cantidad + " colaboradores en " 
+                    + actual.getNombreDepartamento() + ". Solo puede contratar " 
+                    + Math.max(0, vacantesDisponibles) + " colaboradores más.");
+        }
+
+        dotacionDAO.actualizarCantidad(departamentoId, nueva);
+    }
+
+    /** Baja: salen colaboradores del departamento (renuncia, despido o traslado). */
+    public void registrarBaja(int departamentoId, int cantidad) throws NegocioException, SQLException {
+        if (cantidad <= 0) {
+            throw new NegocioException("La cantidad de colaboradores debe ser mayor a cero.");
+        }
+        Dotacion actual = buscar(departamentoId);
+        if (cantidad > actual.getCantidad()) {
+            throw new NegocioException("No se puede dar de baja a " + cantidad + " colaboradores: "
+                    + actual.getNombreDepartamento() + " solo tiene " + actual.getCantidad() + ".");
+        }
+        dotacionDAO.actualizarCantidad(departamentoId, actual.getCantidad() - cantidad);
+    }
+
+    private Dotacion buscar(int departamentoId) throws NegocioException, SQLException {
+        Dotacion t = dotacionDAO.buscarPorDepartamento(departamentoId);
+        if (t == null) {
+            throw new NegocioException("El departamento no tiene registro de dotación.");
+        }
+        return t;
+    }
+}
+
+
+
+
+
+9. presentacion/DepartamentoServlet.java
+Java
+package pa.ac.unachi.rrhh.presentacion;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.sql.SQLException;
+import pa.ac.unachi.rrhh.modelo.Departamento;
+import pa.ac.unachi.rrhh.negocio.DepartamentoService;
+import pa.ac.unachi.rrhh.negocio.NegocioException;
+
+/**
+ * Controlador de departamentos. Solo lee parámetros, llama al Service
+ * y decide la vista. No escribe SQL ni valida reglas de negocio.
+ */
+@WebServlet(name = "DepartamentoServlet", urlPatterns = {"/departamentos"})
+public class DepartamentoServlet extends HttpServlet {
+
+    private final DepartamentoService service = new DepartamentoService();
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String accion = valor(request.getParameter("accion"), "listar");
+        try {
+            switch (accion) {
+                case "nuevo" -> mostrarFormulario(request, response);
+                case "editar" -> {
+                    int id = Integer.parseInt(request.getParameter("id"));
+                    request.setAttribute("departamento", service.buscar(id));
+                    mostrarFormulario(request, response);
+                }
+                default -> listar(request, response);
+            }
+        } catch (NegocioException | NumberFormatException e) {
+            request.setAttribute("error", "No se pudo abrir el departamento solicitado.");
+            listarSinError(request, response);
+        } catch (SQLException e) {
+            throw new ServletException("Error de base de datos", e);
+        }
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String accion = valor(request.getParameter("accion"), "");
+        try {
+            switch (accion) {
+                case "guardar" -> guardar(request, response);
+                case "eliminar" -> {
+                    service.eliminar(Integer.parseInt(request.getParameter("id")));
+                    response.sendRedirect(request.getContextPath() + "/departamentos");
+                }
+                default -> response.sendRedirect(request.getContextPath() + "/departamentos");
+            }
+        } catch (SQLException e) {
+            throw new ServletException("Error de base de datos", e);
+        }
+    }
+
+    private void guardar(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
+        String idParam = request.getParameter("id");
+        String salarioBaseParam = request.getParameter("salarioBase");
+        String dotacionMaximaParam = request.getParameter("dotacionMaxima");
+
+        Departamento d = new Departamento();
+        d.setCodigo(valor(request.getParameter("codigo"), "").trim().toUpperCase());
+        d.setNombre(valor(request.getParameter("nombre"), "").trim());
+
+        // Lectura y conversión con captura explícita de NumberFormatException
+        try {
+            if (salarioBaseParam != null && !salarioBaseParam.isBlank()) {
+                d.setSalarioBase(new BigDecimal(salarioBaseParam.trim()));
+            }
+            if (dotacionMaximaParam != null && !dotacionMaximaParam.isBlank()) {
+                d.setDotacionMaxima(Integer.parseInt(dotacionMaximaParam.trim()));
+            }
+        } catch (NumberFormatException e) {
+            request.setAttribute("error", "Los campos salario base y dotación máxima deben ser valores numéricos válidos.");
+            request.setAttribute("departamento", d);
+            mostrarFormulario(request, response);
+            return;
+        }
+
+        try {
+            if (idParam == null || idParam.isBlank()) {
+                service.crear(d);
+            } else {
+                d.setId(Integer.parseInt(idParam));
+                service.actualizar(d);
+            }
+            response.sendRedirect(request.getContextPath() + "/departamentos");
+        } catch (NegocioException e) {
+            // Volver al formulario conservando lo que escribió el usuario
+            request.setAttribute("error", e.getMessage());
+            request.setAttribute("departamento", d);
+            mostrarFormulario(request, response);
+        }
+    }
+
+    private void listar(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
+        request.setAttribute("departamentos", service.listar());
+        request.getRequestDispatcher("/departamentos/listar.jsp").forward(request, response);
+    }
+
+    private void listarSinError(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        try {
+            listar(request, response);
+        } catch (SQLException e) {
+            throw new ServletException("Error de base de datos", e);
+        }
+    }
+
+    private void mostrarFormulario(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        request.getRequestDispatcher("/departamentos/formulario.jsp").forward(request, response);
+    }
+
+    private static String valor(String texto, String porDefecto) {
+        return texto == null ? porDefecto : texto;
+    }
+}
+
+
+
+10. departamentos/formulario.jsp
+Java
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%-- Punto extra: Solución al bug del ID en modo creación tras error de validación --%>
+<c:set var="esEdicion" value="${not empty departamento && departamento.id > 0}"/>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>${esEdicion ? 'Editar' : 'Nuevo'} departamento</title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/estilos.css">
+</head>
+<body>
+<%@ include file="/WEB-INF/jspf/menu.jspf" %>
+<main>
+    <h2>${esEdicion ? 'Editar' : 'Nuevo'} departamento</h2>
+    <c:if test="${not empty error}"><div class="error"><c:out value="${error}"/></div></c:if>
+
+    <form method="post" action="${pageContext.request.contextPath}/departamentos">
+        <input type="hidden" name="accion" value="guardar">
+        <c:if test="${esEdicion}">
+            <input type="hidden" name="id" value="${departamento.id}">
+        </c:if>
+
+        <label for="codigo">Código</label>
+        <input type="text" id="codigo" name="codigo" maxlength="10" placeholder="DEP-000"
+               value="<c:out value='${departamento.codigo}'/>" required>
+
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" name="nombre" maxlength="100"
+               value="<c:out value='${departamento.nombre}'/>" required>
+
+        <%-- Tema B: Salario Base y Dotación Máxima --%>
+        <label for="salarioBase">Salario base</label>
+        <input type="number" id="salarioBase" name="salarioBase" min="0.01" step="0.01"
+               value="<c:out value='${departamento.salarioBase}'/>" required>
+
+        <label for="dotacionMaxima">Dotación máxima</label>
+        <input type="number" id="dotacionMaxima" name="dotacionMaxima" min="1" step="1"
+               value="<c:out value='${departamento.dotacionMaxima}'/>" required>
+
+        <div class="acciones">
+            <button class="boton" type="submit">Guardar</button>
+            <a class="boton secundario" href="${pageContext.request.contextPath}/departamentos">Cancelar</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>
+
+
+
+
+
+11. departamentos/listar.jsp
+Java
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Departamentos</title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/estilos.css">
+</head>
+<body>
+<%@ include file="/WEB-INF/jspf/menu.jspf" %>
+<main>
+    <h2>Departamentos</h2>
+    <c:if test="${not empty error}"><div class="error">${error}</div></c:if>
+
+    <a class="boton" href="${pageContext.request.contextPath}/departamentos?accion=nuevo">Nuevo departamento</a>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <%-- Tema B: Columnas de listado --%>
+            <th class="numero">Salario Base</th>
+            <th class="numero">Dotación Máxima</th>
+            <th>Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        <c:forEach var="d" items="${departamentos}">
+            <tr>
+                <td><c:out value="${d.codigo}"/></td>
+                <td><c:out value="${d.nombre}"/></td>
+                <td class="numero">
+                    <fmt:formatNumber value="${d.salarioBase}" type="currency" currencySymbol="B/. " minFractionDigits="2" maxFractionDigits="2"/>
+                </td>
+                <td class="numero">${d.dotacionMaxima}</td>
+                <td>
+                    <a class="boton secundario" href="${pageContext.request.contextPath}/departamentos?accion=editar&id=${d.id}">Editar</a>
+                    <form class="en-linea" method="post" action="${pageContext.request.contextPath}/departamentos"
+                          onsubmit="return confirm('¿Eliminar el departamento ${d.codigo}?');">
+                        <input type="hidden" name="accion" value="eliminar">
+                        <input type="hidden" name="id" value="${d.id}">
+                        <button class="boton peligro" type="submit">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+        </c:forEach>
+        <c:if test="${empty departamentos}">
+            <tr><td colspan="5">No hay departamentos registrados.</td></tr>
+        </c:if>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>
+
+
+
+
+
+12. dotacion/listar.jsp
+Java
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Dotación</title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/estilos.css">
+</head>
+<body>
+<%@ include file="/WEB-INF/jspf/menu.jspf" %>
+<main>
+    <h2>Gestión de Dotación</h2>
+    <c:if test="${not empty error}"><div class="error"><c:out value="${error}"/></div></c:if>
+    <c:if test="${not empty mensaje}"><div class="mensaje"><c:out value="${mensaje}"/></div></c:if>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Código</th>
+            <th>Departamento</th>
+            <th class="numero">Colaboradores</th>
+            <%-- Tema B: Columna de lectura --%>
+            <th class="numero">Dotación Máxima</th>
+            <th>Registrar movimiento</th>
+        </tr>
+        </thead>
+        <tbody>
+        <c:forEach var="t" items="${dotaciones}">
+            <tr>
+                <td><c:out value="${t.codigoDepartamento}"/></td>
+                <td><c:out value="${t.nombreDepartamento}"/></td>
+                <td class="numero">${t.cantidad}</td>
+                <td class="numero">${t.dotacionMaximaDepartamento}</td>
+                <td>
+                    <form class="en-linea" method="post" action="${pageContext.request.contextPath}/dotacion">
+                        <input type="hidden" name="departamentoId" value="${t.departamentoId}">
+                        <input type="number" name="cantidad" min="1" step="1" value="1" required>
+                        <button class="boton" type="submit" name="accion" value="alta">Alta</button>
+                        <button class="boton secundario" type="submit" name="accion" value="baja">Baja</button>
+                    </form>
+                </td>
+            </tr>
+        </c:forEach>
+        <c:if test="${empty dotaciones}">
+            <tr><td colspan="5">No hay departamentos registrados.</td></tr>
+        </c:if>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

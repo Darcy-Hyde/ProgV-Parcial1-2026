@@ -1,0 +1,20 @@
+Bug Corregido (Parcial #1)
+--------------------------------------------------------------------------------
+Archivo afectado: src/main/webapp/departamentos/formulario.jsp
+Explicación del bug corregido:
+Cuando falla una validación al crear un nuevo departamento (por ejemplo, salarioBase <= 0),
+el Servlet captura NegocioException o NumberFormatException y reenvía el objeto 'departamento'
+instanciado de vuelta a formulario.jsp.
+En la plantilla original, la evaluación c:if test="${not empty departamento.id}"> o
+<c:if test="${empty departamento.id}"> causaba que al tener un id numérico primitivo o 0,
+se imprimiera un <input type="hidden" name="id" value="0">.
+Al corregir los datos y presionar "Guardar", el Servlet leía idParam ("0"),
+lo que provocaba que se ejecutara departamentoService.modificar(departamento) en lugar de
+departamentoService.crear(departamento), lanzando un error al buscar un registro inexistente.
+
+Solución aplicada:
+Se corrigió la condición en formulario.jsp para garantizar que el campo oculto id solo se
+renderice si el ID es un valor positivo válido:
+<c:if test="${not empty departamento.id && departamento.id > 0}">
+  <input type="hidden" name="id" value="${departamento.id}">
+</c:if>

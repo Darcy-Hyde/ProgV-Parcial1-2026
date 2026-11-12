@@ -1,0 +1,8 @@
+<%@ page pageEncoding="UTF-8" %>
+<header>
+    <h1>Gestión de Personal</h1>
+    <nav>
+        <a href="${pageContext.request.contextPath}/departamentos">Departamentos</a>
+        <a href="${pageContext.request.contextPath}/dotacion">Gestión de Dotación</a>
+    </nav>
+</header>
